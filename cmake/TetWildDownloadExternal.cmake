@@ -7,6 +7,7 @@ function(tetwild_download_project name)
         PROJ         ${name}
         SOURCE_DIR   ${TETWILD_EXTERNAL}/${name}
         DOWNLOAD_DIR ${TETWILD_EXTERNAL}/.cache/${name}
+        QUIET
         ${ARGN}
     )
 endfunction()
