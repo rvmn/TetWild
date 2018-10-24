@@ -15,15 +15,15 @@ MshLoader::MshLoader(const std::string& filename) {
     if (!fin.is_open()) {
         std::stringstream err_msg;
         err_msg << "failed to open file \"" << filename << "\"";
-//        return;
-        throw IOError(err_msg.str());
+        return;
+        //throw IOError(err_msg.str());
     }
     // Parse header
     std::string buf;
     double version;
     int type;
     fin >> buf;
-    if (buf != "$MeshFormat") { throw INVALID_FORMAT; }
+    if (buf != "$MeshFormat") { return; }
 
     fin >> version >> type >> m_data_size;
     m_binary = (type == 1);
@@ -31,11 +31,13 @@ MshLoader::MshLoader(const std::string& filename) {
     // Some sanity check.
     if (m_data_size != 8) {
         std::cerr << "Error: data size must be 8 bytes." << std::endl;
-        throw NOT_IMPLEMENTED;
+        //throw NOT_IMPLEMENTED;
+        return;
     }
     if (sizeof(int) != 4) {
         std::cerr << "Error: code must be compiled with int size 4 bytes." << std::endl;
-        throw NOT_IMPLEMENTED;
+        //throw NOT_IMPLEMENTED;
+        return;
     }
 
     // Read in extra info from binary header.
@@ -47,12 +49,13 @@ MshLoader::MshLoader(const std::string& filename) {
             std::cerr << "Warning: binary msh file " << filename
                 << " is saved with different endianness than this machine."
                 << std::endl;
-            throw NOT_IMPLEMENTED;
+            //throw NOT_IMPLEMENTED;
+            return;
         }
     }
 
     fin >> buf;
-    if (buf != "$EndMeshFormat") { throw NOT_IMPLEMENTED; }
+    if (buf != "$EndMeshFormat") { return; }
 
     while (!fin.eof()) {
         buf.clear();
@@ -60,19 +63,19 @@ MshLoader::MshLoader(const std::string& filename) {
         if (buf == "$Nodes") {
             parse_nodes(fin);
             fin >> buf;
-            if (buf != "$EndNodes") { throw INVALID_FORMAT; }
+            if (buf != "$EndNodes") { return;; }
         } else if (buf == "$Elements") {
             parse_elements(fin);
             fin >> buf;
-            if (buf != "$EndElements") { throw INVALID_FORMAT; }
+            if (buf != "$EndElements") { return;; }
         } else if (buf == "$NodeData") {
             parse_node_field(fin);
             fin >> buf;
-            if (buf != "$EndNodeData") { throw INVALID_FORMAT; }
+            if (buf != "$EndNodeData") { return;; }
         } else if (buf == "$ElementData") {
             parse_element_field(fin);
             fin >> buf;
-            if (buf != "$EndElementData") { throw INVALID_FORMAT; }
+            if (buf != "$EndElementData") { return;; }
         } else if (fin.eof()) {
             break;
         } else {
