@@ -191,8 +191,15 @@ mmg_add_sources(mmg3d ${MMG_MMG3D_SOURCES})
 
 add_library(mmg::mmg ALIAS mmg)
 
-target_include_directories(mmg PUBLIC SYSTEM ${MMG_SOURCE_DIR}/src)
-target_include_directories(mmg PUBLIC SYSTEM ${MMG_BINARY_DIR})
+target_include_directories(mmg PUBLIC SYSTEM
+    ${MMG_SOURCE_DIR}/src
+    ${MMG_SOURCE_DIR}/src/common
+    ${MMG_SOURCE_DIR}/src/mmg
+    ${MMG_SOURCE_DIR}/src/mmgs
+    ${MMG_SOURCE_DIR}/src/mmg2d
+    ${MMG_SOURCE_DIR}/src/mmg3d
+    ${MMG_BINARY_DIR}
+)
 
 set_target_properties(${target_name} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
