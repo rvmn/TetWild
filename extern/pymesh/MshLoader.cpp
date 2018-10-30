@@ -151,6 +151,8 @@ void MshLoader::parse_elements(std::ifstream& fin) {
     std::vector<int> quad_elements;
     std::vector<int> tet_element_idx;
     std::vector<int> tet_elements;
+    std::vector<int> quadratic_tet_element_idx;
+    std::vector<int> quadratic_tet_elements;
     std::vector<int> hex_element_idx;
     std::vector<int> hex_elements;
 
@@ -164,6 +166,8 @@ void MshLoader::parse_elements(std::ifstream& fin) {
                 return &tet_elements;
             case 5:
                 return &hex_elements;
+            case 11:
+                return &quadratic_tet_elements;
             default:
                 throw IOError("Unsupported element type encountered");
         };
@@ -179,6 +183,8 @@ void MshLoader::parse_elements(std::ifstream& fin) {
                 return &tet_element_idx;
             case 5:
                 return &hex_element_idx;
+            case 11:
+                return &quadratic_tet_element_idx;
             default:
                 throw IOError("Unsupported element type encountered");
         };
@@ -262,6 +268,9 @@ void MshLoader::parse_elements(std::ifstream& fin) {
     if (!tet_elements.empty()) {
         copy_to_array(tet_elements, 4);
         m_element_type = 4;
+    } else if (!quadratic_tet_elements.empty()) {
+      copy_to_array(quadratic_tet_elements, 10);
+      m_element_type = 11;
     } else if (!hex_elements.empty()) {
         copy_to_array(hex_elements, 8);
         m_element_type = 5;
@@ -447,6 +456,9 @@ int MshLoader::num_nodes_per_elem_type(int elem_type) {
             break;
         case 5:
             nodes_per_element = 8; // hexahedron
+            break;
+        case 11:
+            nodes_per_element = 10; // quadratic tets
             break;
         default:
             std::cerr << "Warning: Element type (" << elem_type << ") is not supported yet."
