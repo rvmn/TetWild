@@ -84,7 +84,7 @@ target_link_libraries(tetwild
 	PRIVATE
 		libigl2
 		cgal2
-		geogram
+		geogram::geogram
 	PUBLIC
 		spdlog
 		mmg::mmg
