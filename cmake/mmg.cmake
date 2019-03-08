@@ -210,10 +210,7 @@ target_include_directories(mmg PUBLIC SYSTEM
 )
 
 set_target_properties(mmg PROPERTIES CXX_VISIBILITY_PRESET hidden)
-
-set_target_properties(mmg PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-set_target_properties(mmg PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-set_target_properties(mmg PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+ntop_output_directory(mmg)
 
 ################################################################################
 
