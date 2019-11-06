@@ -30,6 +30,7 @@
 #include <geogram/mesh/mesh_AABB.h>
 #include <queue>
 #include <fstream>
+#include <array>
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Wrapper for 3D remeshing comes from:
