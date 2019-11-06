@@ -18,6 +18,7 @@
 #include <geogram/mesh/mesh.h>
 #include <fstream>
 #include <algorithm>
+#include <array>
 
 namespace tetwild {
 
