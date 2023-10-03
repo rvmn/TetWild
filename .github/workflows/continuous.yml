@@ -1,0 +1,225 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+env:
+  CTEST_OUTPUT_ON_FAILURE: ON
+  CTEST_PARALLEL_LEVEL: 2
+  
+jobs:
+  ####################
+  #  macOS
+  ####################
+
+  Mac:
+    name: ${{ matrix.os }}-${{ matrix.envelope }} (${{ matrix.config }})
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos]
+        #config: [Debug, Release]
+        envelope: [ON, OFF]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 10
+
+      - name: Dependencies (macOS)
+        if: matrix.os == 'macos'
+        run: brew install suite-sparse ccache gmp
+
+      - name: Cache Build
+        id: cache-build
+        uses: actions/cache@v3
+        with:
+          path: ~/.ccache
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.envelope }}-cache
+
+      - name: Prepare ccache
+        run: |
+          ccache --max-size=1.0G
+          ccache -V && ccache --show-stats && ccache --zero-stats
+
+      - name: Configure
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DTETWILD_WITH_EXACT_ENVELOPE=${{ matrix.envelope }} \
+
+      - name: Build
+        run: cd build; make -j2; ccache --show-stats
+
+      - name: Tests
+        run: cd build; ctest --verbose --output-on-failure
+
+      - name: Run Example
+        run: cd build; ./TetWild --input ../tests/bunny.off --level 0 --stop-energy 100
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: rc_TetWild_mac
+          path: build
+  
+  ####################
+  # Linux
+  ####################
+
+  Unix:
+    name: ${{ matrix.os }}-${{ matrix.envelope }} (${{ matrix.config }})
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu]
+        #config: [Debug, Release]
+        envelope: [ON, OFF]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 10
+
+      - name: Dependencies (Linux)
+        if: matrix.os == 'ubuntu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install \
+          libblas-dev \
+          libboost-filesystem-dev \
+          libboost-system-dev \
+          libboost-thread-dev \
+          libglu1-mesa-dev \
+          libsuitesparse-dev \
+          xorg-dev \
+          ccache
+          
+      - name: Cache Build
+        id: cache-build
+        uses: actions/cache@v3
+        with:
+          path: ~/.ccache
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.envelope }}-cache
+
+      - name: Prepare ccache
+        run: |
+          ccache --max-size=1.0G
+          ccache -V && ccache --show-stats && ccache --zero-stats
+
+      - name: Configure
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DTETWILD_WITH_EXACT_ENVELOPE=${{ matrix.envelope }} \
+
+      - name: Build
+        run: cd build; make -j2; ccache --show-stats
+
+      - name: Tests
+        run: cd build; ctest --verbose --output-on-failure
+
+      - name: Run Example
+        run: cd build; ./TetWild --input ../tests/bunny.off --level 0 --stop-energy 100
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: rc_TetWild_linux
+          path: build
+ 
+  ####################
+  # Windows
+  ####################
+
+  Windows:
+    name: windows-${{ matrix.envelope }} (${{ matrix.config }})
+    runs-on: windows-latest
+    env:
+      CC: cl.exe
+      CXX: cl.exe
+      SCCACHE_IDLE_TIMEOUT: "12000"
+    strategy:
+      fail-fast: false
+      matrix:
+        #config: [Debug, Release]
+        envelope: [ON, OFF]
+    steps:
+      - name: Stetup Conda
+        uses: s-weigand/setup-conda@v1
+        with:
+          conda-channels: anaconda, conda-forge
+          python-version: 3.6
+
+      - name: Install Dependencies
+        shell: powershell
+        run: |
+          conda install -c conda-forge mpir -y
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 10
+      - uses: seanmiddleditch/gha-setup-ninja@master
+        # https://github.com/actions/cache/issues/101
+      - name: Set env
+        run: |
+          echo "appdata=$env:LOCALAPPDATA" >> ${env:GITHUB_ENV}
+          echo "GMP_INC=C:\Miniconda\Library\include" >> ${env:GITHUB_ENV}
+          echo "GMP_LIB=C:\Miniconda\Library\lib" >> ${env:GITHUB_ENV}
+
+      - name: Cache build
+        id: cache-build
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.appdata }}\Mozilla\sccache
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.envelope }}-cache
+
+      - name: Prepare sccache
+        run: |
+          irm get.scoop.sh -outfile 'install.ps1'
+          .\install.ps1 -RunAsAdmin
+          scoop install sccache --global
+          # Scoop modifies the PATH so we make it available for the next steps of the job
+          echo "${env:PATH}" >> ${env:GITHUB_PATH}
+
+      - name: Configure and build
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64
+          cmake --version
+          cmake -G Ninja ^
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ^
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
+            -DFLOAT_TETWILD_WITH_EXACT_ENVELOPE=${{ matrix.envelope }} ^
+            -B build ^
+            -S .
+          cd build
+          ninja -j1
+
+      - name: Tests
+        run: |
+          cd build
+          ctest --verbose --output-on-failure
+
+      - name: Run Example
+        shell: powershell
+        run: |
+          cd build
+          cp C:\Miniconda\envs\__setup_conda\Library\bin\mpir.dll .\
+          cp C:\Miniconda\envs\__setup_conda\Library\bin\gmp.dll .\
+          .\FloatTetwild_bin.exe --input ..\tests\bunny.off --level 0  --stop-energy 200
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: rc_TetWild_win
+          path: build/
