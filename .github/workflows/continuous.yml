@@ -32,7 +32,7 @@ jobs:
 
       - name: Dependencies (macOS)
         if: matrix.os == 'macos'
-        run: brew install suite-sparse ccache gmp
+        run: brew install suite-sparse ccache gmp cgal
 
       - name: Cache Build
         id: cache-build
@@ -101,7 +101,8 @@ jobs:
           libglu1-mesa-dev \
           libsuitesparse-dev \
           xorg-dev \
-          ccache
+          ccache \
+          libcgal-dev
           
       - name: Cache Build
         id: cache-build
