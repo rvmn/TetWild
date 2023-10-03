@@ -10,7 +10,7 @@ option(TETWILD_WITH_ISPC   "Use ISPC"                                   OFF)
 # libigl library
 option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
 option(LIBIGL_WITH_ANTTWEAKBAR      "Use AntTweakBar"    OFF)
-option(LIBIGL_WITH_CGAL             "Use CGAL"           ON)
+option(LIBIGL_WITH_CGAL             "Use CGAL"           OFF)
 option(LIBIGL_WITH_COMISO           "Use CoMiso"         OFF)
 option(LIBIGL_WITH_CORK             "Use Cork"           OFF)
 option(LIBIGL_WITH_LIM              "Use LIM"            OFF)
