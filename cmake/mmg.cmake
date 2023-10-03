@@ -210,7 +210,7 @@ target_include_directories(mmg PUBLIC SYSTEM
 )
 
 set_target_properties(mmg PROPERTIES CXX_VISIBILITY_PRESET hidden)
-ntop_output_directory(mmg)
+#### ntop_output_directory(mmg)
 
 ################################################################################
 
