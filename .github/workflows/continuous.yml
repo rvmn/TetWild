@@ -32,7 +32,7 @@ jobs:
 
       - name: Dependencies (macOS)
         if: matrix.os == 'macos'
-        run: brew install suite-sparse ccache gmp cgal
+        run: brew install suite-sparse ccache gmp cgal && git clone --recursive https://github.com/libigl/libigl.git ./libigl
 
       - name: Cache Build
         id: cache-build
@@ -102,7 +102,7 @@ jobs:
           libsuitesparse-dev \
           xorg-dev \
           ccache \
-          libcgal-dev
+          libcgal-dev && git clone --recursive https://github.com/libigl/libigl.git ./libigl
           
       - name: Cache Build
         id: cache-build
