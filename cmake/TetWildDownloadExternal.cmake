@@ -7,7 +7,6 @@ function(tetwild_download_project name)
         PROJ         ${name}
         SOURCE_DIR   ${TETWILD_EXTERNAL}/${name}
         DOWNLOAD_DIR ${TETWILD_EXTERNAL}/.cache/${name}
-        QUIET
         ${ARGN}
     )
 endfunction()
@@ -17,16 +16,16 @@ endfunction()
 ## libigl
 function(tetwild_download_libigl)
     tetwild_download_project(libigl
-        GIT_REPOSITORY https://github.com/jdumas/libigl.git
-        GIT_TAG        5cfc34dd1680cfe5a6e545ed9f89ae5cf2d644b7
+        GIT_REPOSITORY https://github.com/libigl/libigl.git
+        GIT_TAG        45cfc79fede992ea3923ded9de3c21d1c4faced1
     )
 endfunction()
 
 ## geogram
 function(tetwild_download_geogram)
     tetwild_download_project(geogram
-        GIT_REPOSITORY https://github.com/alicevision/geogram.git
-        GIT_TAG        v1.6.7
+        GIT_REPOSITORY https://github.com/Yixin-Hu/geogram/
+        GIT_TAG        b613750341a6cdd31ae8df80ecfc26ac7ca1a6ad
     )
 endfunction()
 
