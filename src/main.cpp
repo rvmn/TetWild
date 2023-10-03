@@ -11,6 +11,8 @@
 #include <tetwild/Logger.h>
 #include <tetwild/MeshRefinement.h>
 #include <tetwild/geogram/Utils.h>
+#include <igl/opengl/glfw/Viewer.h>
+#include <igl/boundary_facets.h>
 #include <igl/remove_duplicate_vertices.h>
 #include <igl/read_triangle_mesh.h>
 #include <igl/write_triangle_mesh.h>
@@ -22,6 +24,8 @@
 #include <tetwild/DisableWarnings.h>
 #include <CLI/CLI.hpp>
 #include <tetwild/EnableWarnings.h>
+
+#include <iostream>
 
 using namespace tetwild;
 
@@ -55,6 +59,47 @@ std::vector<std::string> split(std::string s, std::string delimiter) {
     
     res.push_back (s.substr (pos_start));
     return res;
+}
+
+//load input surface
+Eigen::MatrixXd VI, VO;
+Eigen::MatrixXi FI, TO;
+Eigen::VectorXd AO;
+Eigen::MatrixXi F;
+Eigen::MatrixXd B;
+
+// This function is called every time a keyboard button is pressed - used in viewer
+bool key_down(igl::opengl::glfw::Viewer& viewer, unsigned char key, int modifier)
+{
+	 using namespace std;
+	using namespace Eigen;
+	 if (key >= '1' && key <= '9')
+	{
+		double t = double((key - '1')+1) / 9.0;
+		VectorXd v = B.col(2).array() - B.col(2).minCoeff();
+		v /= v.col(0).maxCoeff();
+		 vector<int> s;
+		 for (unsigned i=0; i<v.size();++i)
+			if (v(i) < t)
+				s.push_back(i);
+		 MatrixXd V_temp(s.size()*4,3);
+		 MatrixXi F_temp(s.size()*4,3);
+		 for (unsigned i=0; i<s.size();++i)
+		{
+			V_temp.row(i*4+0) = VO.row(T(s[i],0));
+			V_temp.row(i*4+1) = VO.row(T(s[i],1));
+			V_temp.row(i*4+2) = VO.row(T(s[i],2));
+			V_temp.row(i*4+3) = VO.row(T(s[i],3));
+			F_temp.row(i*4+0) << (i*4)+0, (i*4)+1, (i*4)+3;
+			F_temp.row(i*4+1) << (i*4)+0, (i*4)+2, (i*4)+1;
+			F_temp.row(i*4+2) << (i*4)+3, (i*4)+2, (i*4)+0;
+			F_temp.row(i*4+3) << (i*4)+1, (i*4)+2, (i*4)+3;
+		}
+        viewer.data().clear();
+		viewer.data().set_mesh(V_temp,F_temp);
+		viewer.data().set_face_based(true);
+	}
+	 return false;
 }
 
 // Tests whether a string ends with a given suffix
@@ -169,6 +214,7 @@ int main(int argc, char *argv[]) {
     app.add_option("--bg-mesh", args.background_mesh, "Background tetmesh BGMESH in .msh format for applying sizing field. (string, optional)");
     app.add_flag("-q,--is-quiet", args.is_quiet, "Mute console output. (optional)");
     app.add_flag("-cli,--output-to-commandline", args.use_commandline, "Output gmsh to commandline. (default: false).");
+    app.add_flag("-view,--view-result", args.view_result, "View the resulting tetmesh. (default: false).");
     app.add_option("--log", log_filename, "Log info to given file.");
     app.add_option("--level", log_level, "Log level (0 = most verbose, 6 = off).");
     app.add_flag("--mmgs", args.use_mmgs, "Use mmgs in the *experimental* hybrid pipeline (default: false).");
@@ -196,7 +242,7 @@ int main(int argc, char *argv[]) {
     if(slz_file != "") {
         args.working_dir = input_surface.substr(0, slz_file.size() - 4);
     } else {
-        args.working_dir = input_surface.substr(0, input_surface.size() - 4);
+        args.working_dir = input_surface.substr(0, input_surfacesize() - 4);
     }
 
     if(args.csv_file.empty()) {
@@ -230,11 +276,6 @@ int main(int argc, char *argv[]) {
     //     }
     //     std::cout << "[" << name << "] " << x << std::endl;
     // };
-
-    //load input surface
-    Eigen::MatrixXd VI, VO;
-    Eigen::MatrixXi FI, TO;
-    Eigen::VectorXd AO;
     
 
     if(input_verts){
@@ -286,6 +327,24 @@ int main(int argc, char *argv[]) {
         tetwild::tetrahedralization(VI, FI, VO, TO, AO, args);
     }
 
+    if(args.view_result){
+        igl::boundary_facets(VO, F);
+        
+        // Compute barycenters
+    	igl::barycenter(VO, F, B);
+    
+    	// Plot the generated mesh
+    	igl::opengl::glfw::Viewer viewer;
+    
+    	viewer.data().clear();
+    	viewer.data().set_mesh(VO, F);
+    	viewer.data().set_face_based(true);
+    
+    	viewer.callback_key_down = &key_down;
+    	key_down(viewer,'5',0);
+    	viewer.launch();
+    }
+        
     //save output volume
     saveFinalTetmesh(output_volume, output_surface, VO, TO, AO, args.use_commandline);
 
