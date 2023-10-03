@@ -170,7 +170,7 @@ target_link_libraries(TetWild
 		igl::cgal
 		warnings::all
 )
-igl_copy_cgal_dll(TetWild)
+## igl_copy_cgal_dll(TetWild)
 
 # Install
 install(TARGETS TetWild RUNTIME DESTINATION bin)
