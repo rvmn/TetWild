@@ -41,6 +41,22 @@ int setenv(const char *name, const char *value, int overwrite) {
 }
 #endif
 
+// split string on a delimiter
+std::vector<std::string> split(std::string s, std::string delimiter) {
+    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+    std::string token;
+    std::vector<std::string> res;
+
+    while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos) {
+        token = s.substr (pos_start, pos_end - pos_start);
+        pos_start = pos_end + delim_len;
+        res.push_back (token);
+    }
+    
+    res.push_back (s.substr (pos_start));
+    return res;
+}
+
 // Tests whether a string ends with a given suffix
 bool endswith(const std::string &str, const std::string &suffix) {
     if (str.length() >= suffix.length()) {
@@ -57,11 +73,14 @@ bool endswith_nocase(const std::string &str, const std::string &suffix) {
 }
 
 void saveFinalTetmesh(const std::string &output_volume, const std::string &output_surface,
-    const Eigen::MatrixXd &V, const Eigen::MatrixXi &T, const Eigen::VectorXd &A)
+    const Eigen::MatrixXd &V, const Eigen::MatrixXi &T, const Eigen::VectorXd &A, bool save_to_commandline)
 {
     logger().debug("Writing mesh to {}...", output_volume);
     if (endswith_nocase(output_volume, ".mesh")) {
-        std::ofstream f(output_volume);
+        if(save_to_commandline)
+            std::ofstream f;
+        else
+            std::ofstream f(output_volume);
         f.precision(std::numeric_limits<double>::digits10 + 1);
         f << "MeshVersionFormatted 1" << std::endl;
         f << "Dimension 3" << std::endl;
@@ -134,8 +153,10 @@ int main(int argc, char *argv[]) {
     Args args;
 
     CLI::App app{"RobustTetMeshing"};
-    app.add_option("input,--input", input_surface, "Input surface mesh INPUT in .off/.obj/.stl/.ply format. (string, required)")->required()->check(CLI::ExistingFile);
+    app.add_option("input,--input", input_surface, "Input surface mesh INPUT in .off/.obj/.stl/.ply format. (string)")->check(CLI::ExistingFile);
     app.add_option("output,--output", output_volume, "Output tetmesh OUTPUT in .msh format. (string, optional, default: input_file+postfix+'.msh')");
+    app.add_option("input_verts,--input-verts", input_vertices, "Input vertices splitted by point-comma e.g. 1,2,3;2,3,4;");
+    app.add_option("input_indices,--input-indices", input_indices, "Input face indices, joined by comma");
     app.add_option("--postfix", args.postfix, "Postfix P for output files. (string, optional, default: '_')");
     app.add_option("-l,--ideal-edge-length", args.initial_edge_len_rel, "ideal_edge_length = diag_of_bbox * L / 100. (double, optional, default: 5%)");
     app.add_option("-e,--epsilon", args.eps_rel, "epsilon = diag_of_bbox * EPS / 100. (double, optional, default: 0.1%)");
@@ -147,6 +168,7 @@ int main(int argc, char *argv[]) {
     app.add_option("--targeted-num-v", args.target_num_vertices, "Output tetmesh that contains TV vertices. (integer, optional, tolerance: 5%)");
     app.add_option("--bg-mesh", args.background_mesh, "Background tetmesh BGMESH in .msh format for applying sizing field. (string, optional)");
     app.add_flag("-q,--is-quiet", args.is_quiet, "Mute console output. (optional)");
+    app.add_flag("-cli,--output-to-commandline", args.use_commandline, "Output gmsh to commandline. (default: false).");
     app.add_option("--log", log_filename, "Log info to given file.");
     app.add_option("--level", log_level, "Log level (0 = most verbose, 6 = off).");
     app.add_flag("--mmgs", args.use_mmgs, "Use mmgs in the *experimental* hybrid pipeline (default: false).");
@@ -157,7 +179,8 @@ int main(int argc, char *argv[]) {
     } catch (const CLI::ParseError &e) {
         return app.exit(e);
     }
-
+    if(args.use_commandline && !log_filename) args.is_quiet = true;
+        
     Logger::init(!args.is_quiet, log_filename);
     log_level = std::max(0, std::min(6, log_level));
     spdlog::set_level(static_cast<spdlog::level::level_enum>(log_level));
@@ -212,7 +235,33 @@ int main(int argc, char *argv[]) {
     Eigen::MatrixXd VI, VO;
     Eigen::MatrixXi FI, TO;
     Eigen::VectorXd AO;
-    igl::read_triangle_mesh(input_surface, VI, FI);
+    
+
+    if(input_verts){
+        // split the verts and indices
+        std::vector<std::vector<float>> verts;
+        std::vector<std::string> vert_strings = split(input_verts, ";");
+        for(std::string& vert_string: vert_strings){
+            verts.push_back(split(vert_string, ","));
+        }
+        std::vector<int> indices = split(input_indices, ",");
+        
+        // Populate the input vertices.
+        VI.resize(verts.size(), 3);
+        for (int i = 0; i < verts.size(); ++i)
+        {
+            VI.row(i) << vertices[i][0], vertices[i][1], vertices[i][2];
+        }
+    
+        // Populate the input faces (triangles lists).
+        FI.resize(indices.size() / 3, 3);
+        for (int i = 0; i < FI.rows(); ++i)
+        {
+            FI.row(i) << indices[i * 3 + 0], indices[i * 3 + 1], indices[i * 3 + 2];
+        }
+    }else 
+        igl::read_triangle_mesh(input_surface, VI, FI);
+    
     if (VI.rows() == 0) {
         logger().warn("libigl failed to read input mesh: {}, trying with geogram", input_surface);
         GEO::Mesh M;
@@ -238,7 +287,7 @@ int main(int argc, char *argv[]) {
     }
 
     //save output volume
-    saveFinalTetmesh(output_volume, output_surface, VO, TO, AO);
+    saveFinalTetmesh(output_volume, output_surface, VO, TO, AO, args.use_commandline);
 
     spdlog::shutdown();
 
