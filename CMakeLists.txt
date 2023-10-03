@@ -24,9 +24,9 @@ option(LIBIGL_WITH_XML              "Use XML"            OFF)
 # gui
 option(LIBIGL_WITH_EMBREE           "Use Embree"         OFF)
 option(LIBIGL_WITH_NANOGUI          "Use Nanogui menu"   OFF)
-option(LIBIGL_WITH_OPENGL           "Use OpenGL"         OFF)
+option(LIBIGL_WITH_OPENGL           "Use OpenGL"         ON)
 option(LIBIGL_WITH_OPENGL_GLFW      "Use GLFW"           OFF)
-option(LIBIGL_WITH_VIEWER           "Use OpenGL viewer"  OFF)
+option(LIBIGL_WITH_VIEWER           "Use OpenGL viewer"  ON)
 #geogram
 option(GEOGRAM_WITH_TRIANGLE        "Use Triangle"       OFF)
 
