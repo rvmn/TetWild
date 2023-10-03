@@ -6,4 +6,4 @@ target_link_libraries(levelset
 		warnings::all
 )
 target_include_directories(levelset PRIVATE src)
-igl_copy_cgal_dll(levelset)
+## igl_copy_cgal_dll(levelset)
