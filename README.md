@@ -1,5 +1,5 @@
 
-# TetWild - Tetrahedral Meshing in the Wild
+# TetWild² - Tetrahedral Meshing in the Wild, version 2
 ![](docs/teaser.png)
 Yixin Hu, Qingnan Zhou, Xifeng Gao, Alec Jacobson, Denis Zorin, Daniele Panozzo.
 ACM Transactions on Graphics (SIGGRAPH 2018).
