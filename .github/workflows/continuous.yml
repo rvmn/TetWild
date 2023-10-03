@@ -32,7 +32,7 @@ jobs:
 
       - name: Dependencies (macOS)
         if: matrix.os == 'macos'
-        run: brew install suite-sparse ccache gmp cgal
+        run: brew install suite-sparse ccache gmp cgal libigl &&  git clone --recursive https://github.com/libigl/libigl.git ./libigl
 
       - name: Cache Build
         id: cache-build
@@ -102,7 +102,7 @@ jobs:
           libsuitesparse-dev \
           xorg-dev \
           ccache \
-          libcgal-dev
+          libcgal-dev && git clone --recursive https://github.com/libigl/libigl.git ./libigl
           
       - name: Cache Build
         id: cache-build
@@ -167,7 +167,7 @@ jobs:
         shell: powershell
         run: |
           conda install -c conda-forge mpir cgal -y
-
+          
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
@@ -221,7 +221,7 @@ jobs:
           cd build
           cp C:\Miniconda\envs\__setup_conda\Library\bin\mpir.dll .\
           cp C:\Miniconda\envs\__setup_conda\Library\bin\gmp.dll .\
-          .\FloatTetwild_bin.exe --input ..\tests\bunny.off --level 0  --stop-energy 200
+          .\Tetwild_bin.exe --input ..\tests\bunny.off --level 0  --stop-energy 200
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
         with:
