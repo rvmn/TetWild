@@ -71,7 +71,7 @@ endif()
 
 # libigl
 if(NOT TARGET igl::core)
-	tetwild_download_libigl()
+	##tetwild_download_libigl()
 	find_package(LIBIGL REQUIRED)
 endif()
 
